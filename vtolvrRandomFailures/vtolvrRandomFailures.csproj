@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{744B2B4A-F4CD-43C5-AAD8-9F4A270C4458}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>vtolvrRandomFailures</RootNamespace>
+    <AssemblyName>vtolvrRandomFailures</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_Data\Managed\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="ModLoader">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_ModLoader\ModLoader.dll</HintPath>
+    </Reference>
+    <Reference Include="netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="Valve.Newtonsoft.Json">
+      <HintPath>F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_Data\Managed\Valve.Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BaseFailure.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="Plugins\Avionics\dashHSIFailure.cs" />
+    <Compile Include="Plugins\Avionics\dashGuageFailure_inop.cs" />
+    <Compile Include="Plugins\Avionics\mfdPowerFailure.cs" />
+    <Compile Include="Plugins\Avionics\mfdGray_inop.cs" />
+    <Compile Include="Plugins\Environment\birdstrike_inop.cs" />
+    <Compile Include="Plugins\Systems\gearStuckDown.cs" />
+    <Compile Include="Plugins\Systems\gearStuckUp.cs" />
+    <Compile Include="Plugins\Systems\gearStatusLights.cs" />
+    <Compile Include="Plugins\Systems\CanopyRelease.cs" />
+    <Compile Include="Plugins\Systems\engineFailure.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "E:\Documents\Projects\vtolvrRandomFailures\vtolvrRandomFailures\bin\Debug\vtolvrRandomFailures.dll" "F:\SteamLibrary\steamapps\common\VTOL VR\VTOLVR_ModLoader\mods\" /Y</PostBuildEvent>
+  </PropertyGroup>
+</Project>
