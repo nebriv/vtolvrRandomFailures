@@ -21,7 +21,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Dash HSI Failure";
             failureDescription = "Test";
             failureCategory = "Avionics";
-            failureRate = 0.1;
+            hourlyFailureRate = 1;
             failureEnabled = false;
         }
 

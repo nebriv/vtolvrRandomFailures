@@ -25,7 +25,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Gear Status Lights";
             failureDescription = "Hmm something weird is going on with the gear status indicator.";
             failureCategory = "Systems";
-            failureRate = 0.01;
+            hourlyFailureRate = 1;
             maxRunCount = 5;
             failureEnabled = false;
             running = false;

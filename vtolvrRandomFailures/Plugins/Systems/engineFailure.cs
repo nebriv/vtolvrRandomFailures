@@ -23,8 +23,8 @@ namespace vtolvrRandomFailures.Plugins
             failureDescription = "Test";
             failureCategory = "Systems";
 
-            failureRate = 0.01;
-            failureEnabled = false;
+            hourlyFailureRate = 2;
+            failureEnabled = true;
 
         }
 
@@ -53,8 +53,6 @@ namespace vtolvrRandomFailures.Plugins
                     Debug.Log($"Engine {index} is permanently failed");
                 }
             }
-
-
         }
 
         private IEnumerator unfailEngine(int index, ModuleEngine[] engines)

@@ -52,13 +52,13 @@ namespace vtolvrRandomFailures
 
             List<String> failureCategories = new List<string>(failures.Keys);
 
-            settings = new Settings(this);
+            //settings = new Settings(this);
 
-            settings.CreateCustomLabel("Failure rate multiplier changes how often failures happen.");
-            settings.CreateCustomLabel("Default = 1");
-            settings.CreateFloatSetting("Failure multiplier:", multiplierChanged, failureRateMultiplier);
+            //settings.CreateCustomLabel("Failure rate multiplier changes how often failures happen.");
+            //settings.CreateCustomLabel("Default = 1");
+            //settings.CreateFloatSetting("Failure multiplier:", multiplierChanged, failureRateMultiplier);
 
-            settings.CreateCustomLabel("Failure Categories (Currently Read Only)");
+            //settings.CreateCustomLabel("Failure Categories (Currently Read Only)");
 
             //Dictionary<String, Boolean> failureCategoriesEnabled = new Dictionary<string, bool>();
 
@@ -69,7 +69,7 @@ namespace vtolvrRandomFailures
             //}
 
 
-            VTOLAPI.CreateSettingsMenu(settings);
+            //VTOLAPI.CreateSettingsMenu(settings);
 
             Debug.Log($"{Globals.projectName} - {Globals.projectVersion} by {Globals.projectAuthor} loaded!");
         }
@@ -93,20 +93,15 @@ namespace vtolvrRandomFailures
             yield return new WaitForSeconds(2);
 
             runFailures = true;
+            StartCoroutine(RunEverySecond(1));
         }
 
-
-        public void FixedUpdate()
+        IEnumerator RunEverySecond(float seconds)
         {
-
-            if (iterator < 26)
+            while (true)
             {
-                iterator++;
-            }
-            else
-            {
-                iterator = 0;
-
+                yield return new WaitForSeconds(seconds);
+                //Log("Running failure check");
                 if (runFailures)
                 {
                     if (SceneManager.GetActiveScene().buildIndex != 7 && SceneManager.GetActiveScene().buildIndex != 12)
@@ -128,11 +123,27 @@ namespace vtolvrRandomFailures
                             if (chanceMultiplied <= failure.failureRate)
                             {
                                 //Log($"{chanceMultiplied} <= {failure.failureRate}");
-                                failure.runFailure();
+                                failure.runFailure(failures);
                             }
                         }
                     }
                 }
+            }
+
+        }
+
+        public void FixedUpdate()
+        {
+
+            if (iterator < 26)
+            {
+                iterator++;
+            }
+            else
+            {
+                iterator = 0;
+
+
 
             }
         }
@@ -160,6 +171,7 @@ namespace vtolvrRandomFailures
 
                 Log($"Creating BaseFailure");
                 BaseFailure failure = newFailure.GetComponent<BaseFailure>();
+                failure.Setup();
 
                 DontDestroyOnLoad(newFailure);
                 Log($"Done loading.");

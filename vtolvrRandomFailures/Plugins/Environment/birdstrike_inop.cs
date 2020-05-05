@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Random = UnityEngine.Random;
 using Valve.Newtonsoft.Json;
+using NAudio;
+using Unity;
+using System.IO;
 
 namespace vtolvrRandomFailures.Plugins
 {
@@ -18,44 +21,110 @@ namespace vtolvrRandomFailures.Plugins
     {
 
         public GameObject bird;
-        public Transform myTrans;
         public Transform playerLocation;
         public GameObject playersVehicle;
+        public Actor playeractor;
+        public Actor birdActor;
+
+        // Used to control the bird's bobbing
         private bool movingDown = true;
         private float spawnY;
         private float maxDistance = 100;
         private float speed = 1;
-        public Bird(Transform playerLoc)
-        {
-            playerLocation = playerLoc;
-            Debug.Log("Bird Constructor");
-        }
+
+
+        // Bird Spawning Configuration.
+        // XYZ = Bird spawning distance from centered point ahead of player 
+        // (creating a cube that gets filled with birds)
+        private float minX = -300;
+        private float maxX = 300;
+        private float minY = -300;
+        private float maxY = 300;
+        private float minZ = -10;
+        private float maxZ = 10;
+
+        // Min/Max distance that bird filled cube spawns
+        private float minDistanceFromPlayer = 800;
+        private float maxDistanceFromPlayer = 2000;
+
+        // Damage/Failure Rates
+        private float birdColliderRadius = 30f;
+        private float birdDamage = .25f;
+        private float engineFailureRate = .40f; // Read as Percent
+        private float failureRateMultiplier = 3f;
+
+
+        // The audio emitter
+        private AudioSource squawk;
+
+        // A list of all other failures available.
+        public Dictionary<string, List<BaseFailure>> otherFailures = null;
 
         public void Awake()
         {
-            myTrans = gameObject.transform;
-            Actor playeractor = FlightSceneManager.instance.playerActor;
+            // Getting env variables. This is probably pretty costly and 
+            // should be moved out of this as it'll be run every time a bird is created.
+            playeractor = FlightSceneManager.instance.playerActor;
             playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
-
-            print(playersVehicle);
-
             playerLocation = playeractor.transform;
+          
+
+            birdActor = gameObject.AddComponent<Actor>();
+            birdActor.name = "Bird";
+            birdActor.team = Teams.Enemy;
+            birdActor.enabled = false;
+
+            // Make a sphere collider and set it to trigger. 50 units seems big enough for testing
+            // Might go down in size a bit for real life to allow a player to have a chance to dodge.
             SphereCollider birdCollider = gameObject.GetComponent<SphereCollider>();
             birdCollider.isTrigger = true;
-            birdCollider.radius = 50f;
+            birdCollider.radius = birdColliderRadius;
             gameObject.transform.rotation = playerLocation.rotation;
+
+            // Black birds are easier to see.
             gameObject.GetComponent<Renderer>().material.color = Color.black;
+
+            // Does some sort of voodoo magic to stop the object from popping around the player's plane.
             gameObject.AddComponent<FloatingOriginTransform>();
 
-            float SpacingZ = 1500.0f;
+            // Distance to place the birds in front of the player
+            float SpacingZ = Random.Range(minDistanceFromPlayer, maxDistanceFromPlayer);
             Vector3 postion1 = playerLocation.transform.position + playerLocation.transform.forward * SpacingZ;
-            Vector3 position2 = new Vector3(postion1.x + Random.Range(-300, 300), postion1.y + Random.Range(-300, 300), postion1.z + Random.Range(0, 10));
-            gameObject.transform.position = position2;
-            spawnY = transform.position.y;
-            gameObject.SetActive(true);
-            
 
-            //Debug.Log("Bird is awake");
+            // -300x300 seems to be a decent size to place the birds. This will randomly place them within this box below (length 600, width 600, depth 10)
+            Vector3 position2 = new Vector3(postion1.x + Random.Range(minX, maxX), postion1.y + Random.Range(minY, maxY), postion1.z + Random.Range(minZ, maxZ));
+            
+            // Put the bird there.
+            gameObject.transform.position = position2;
+
+            // Used for the bobbing routine.
+            spawnY = transform.position.y;
+
+            // Wakey wakey.
+            gameObject.SetActive(true);
+
+
+            // from the modloader
+            //string path = ModLoaderManager.instance.rootPath + @"\skins";
+            //foreach (string folder in Directory.GetDirectories(path))
+
+
+            //AudioClip bang = Resources.Load("Assets/AudioClip/smg1fire.wav") as AudioClip;
+
+
+            //var myLoadedAssetBundle = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, "myassetBundle"));
+
+            //F:/SteamLibrary/steamapps/common/VTOL VR/VTOLVR_Data/StreamingAssets\myassetBundle
+
+            // Add the audio emitter
+            squawk = gameObject.AddComponent<AudioSource>();
+
+            // Set the bird clip audio (loaded in birdStrike)
+            squawk.clip = birdStrike.birdBump;
+
+            // Set the volume UNKNOWN scale...
+            squawk.volume = .5f;
+
         }
 
         public void Update()
@@ -91,23 +160,66 @@ namespace vtolvrRandomFailures.Plugins
 
         public void OnTriggerEnter(Collider thingICollidedWith)
         {
-            Debug.Log($"Collided with {thingICollidedWith.name} owned by {thingICollidedWith.transform.parent.gameObject.activeInHierarchy} - root {thingICollidedWith.transform.root}");
-            Debug.Log(playersVehicle);
             if (thingICollidedWith.transform.root == playersVehicle.transform)
             {
-                Debug.Log("OH GOD I COLLIDED WITH THE PLAYER!?");
-            }
 
+                Health health = Traverse.Create(playeractor).Field("h").GetValue() as Health;
+                if (health.currentHealth > 10)
+                {
+                    playeractor.health.Damage(birdDamage, new Vector3(0, 0, 0), Health.DamageTypes.Impact, birdActor, "Bird Strike");
+                }
+
+                Debug.Log("Bird Strike!!");
+                squawk.Play();
+                BaseFailure fail = getRandomFailure();
+                System.Random rand = new System.Random();
+                double chance = rand.NextDouble();
+
+                if (fail.failureName == "Engine Failure" && chance <= engineFailureRate)
+                {
+                    fail.runFailure();
+                }
+                else
+                {
+                    Debug.Log($"Is {chance} <= {fail.failureRate * failureRateMultiplier}?");
+                    if (chance <= fail.failureRate * failureRateMultiplier)
+                    {
+                        Debug.Log($"Triggering failure {fail.failureName}");
+                        fail.runFailure(null, true);
+                    }
+                }
+
+            }
+        }
+
+        public BaseFailure getRandomFailure()
+        {
+
+            foreach (KeyValuePair<string, List<BaseFailure>> entry in otherFailures)
+            {
+                if (entry.Key == "Systems")
+                {
+                    return entry.Value[Random.Range(0, entry.Value.Count)];
+                }
+            }
+            return null;
         }
     }
 
     class birdStrike : BaseFailure
     {
 
+        //This seems to be a semi-realistic number that visually looks alright
         int birdCount = 200;
         int curCount = 0;
 
         public GameObject[] birdList;
+
+        public static AssetBundle birdAsset;
+        public static AudioClip notabirdsound;
+        public static AudioClip honking;
+        public static AudioClip birdBump;
+
 
         public birdStrike()
         {
@@ -117,10 +229,18 @@ namespace vtolvrRandomFailures.Plugins
 
             failureCategory = "Environment";
 
-            failureRate = 0.5;
+            hourlyFailureRate = 360;
             failureEnabled = true;
             maxRunCount = 1;
 
+            string birdPath = Path.Combine(Application.dataPath, "Managed", "birdsound.dll");
+
+            birdAsset = AssetBundle.LoadFromFile(birdPath);
+
+            notabirdsound = birdAsset.LoadAsset<AudioClip>("smg1fire");
+
+            honking = birdAsset.LoadAsset<AudioClip>("honk-honk");
+            birdBump = birdAsset.LoadAsset<AudioClip>("doorbump");
         }
 
         public override void Run()
@@ -130,13 +250,33 @@ namespace vtolvrRandomFailures.Plugins
 
             running = true;
 
+            Actor playeractor = FlightSceneManager.instance.playerActor;
+            GameObject playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
+            Transform playerLocation = playeractor.transform;
+
+
+
+            // Add the audio emitter
+            AudioSource honker = gameObject.AddComponent<AudioSource>();
+
+            // Set the bird clip audio (loaded in birdStrike)
+            honker.clip = birdStrike.honking;
+
+            // Set the volume UNKNOWN scale...
+            honker.volume = .5f;
+            honker.Play();
+
+            Debug.Log(otherFailures);
+
             while (curCount < birdCount)
             {
                 //Spawn in bird spheres
                 GameObject bird = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-
-                //Add the above bird class to them
                 bird.AddComponent<Bird>();
+                //Add the above bird class to them
+
+                bird.GetComponent<Bird>().otherFailures = this.otherFailures;
+
 
                 //Keep track of the birds so they don't fly away
                 birdList.Add(bird);
@@ -155,7 +295,10 @@ namespace vtolvrRandomFailures.Plugins
 
             foreach (GameObject bird in birdList)
             {
-                GameObject.Destroy(bird);
+                // I think null birds might be dead?
+                if (bird != null) {
+                    GameObject.Destroy(bird);
+                }
             }
         }
     }

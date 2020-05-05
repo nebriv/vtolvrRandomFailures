@@ -25,11 +25,10 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Gear Stuck Down";
             failureDescription = "Gear Stuck Down.";
             failureCategory = "Systems";
-            failureRate = 0.01;
+            hourlyFailureRate = 1;
             maxRunCount = 5;
             failureEnabled = false;
             running = false;
-            
 
         }
         public override void Run()

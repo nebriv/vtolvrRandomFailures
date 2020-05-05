@@ -25,7 +25,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Gear Stuck Up";
             failureDescription = "Gear Stuck Up.";
             failureCategory = "Systems";
-            failureRate = 0.01;
+            hourlyFailureRate = 1;
             maxRunCount = 5;
             failureEnabled = false;
             running = false;

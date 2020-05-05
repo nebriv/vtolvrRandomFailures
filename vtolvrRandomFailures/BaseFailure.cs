@@ -21,6 +21,7 @@ class BaseFailure : MonoBehaviour
     public string failureDescription;
     public string failureCategory; // Systems, Avionics, Environment
     public double failureRate;
+    public double hourlyFailureRate;
 
     public BaseFailure thisFailure { private set; get; } = null;
 
@@ -31,7 +32,16 @@ class BaseFailure : MonoBehaviour
     public int maxRunCount; // Maximum times the failure is allowed to run. Setting to 0 allows it to run infinitely. >:)
     private int runCount;
 
-    Dictionary<string, List<BaseFailure>> otherFailures = null;
+    public Dictionary<string, List<BaseFailure>> otherFailures = null;
+
+    public void Setup()
+    {
+        if (hourlyFailureRate != 0.0)
+        {
+            failureRate = hourlyFailureRate / 3600;
+            Debug.Log($"Hourly failure rate {hourlyFailureRate} for {failureName} is {failureRate}");
+        }
+    }
 
     public void SetFailureInfo(BaseFailure thisFailure)
     {
@@ -50,10 +60,10 @@ class BaseFailure : MonoBehaviour
         return "Name: " + failureName + " - Category: " + failureCategory + " - Failure Rate: " + failureRate;
     }
 
-    public void runFailure(Dictionary<string, List<BaseFailure>> failures = null)
+    public void runFailure(Dictionary<string, List<BaseFailure>> failures = null, Boolean ignoreDisabled = false)
     {
         otherFailures = failures;
-        if (failureEnabled && !running)
+        if ((failureEnabled || ignoreDisabled ) && !running)
         {
             Debug.Log($"Running Failure: {failureName}");
 

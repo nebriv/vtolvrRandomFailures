@@ -20,7 +20,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Canopy Release";
             failureDescription = "Freddy forgot the secure the electrical system tied to the canopy! Wooosh there it goes!";
             failureCategory = "Systems";
-            failureRate = 0.2;
+            hourlyFailureRate = 1;
             maxRunCount = 1;
             failureEnabled = false;
 
