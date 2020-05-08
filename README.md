@@ -1,6 +1,8 @@
 # VTOLVR Random Failure Mod
 
-This mod has numerous features to add a little excitement to your flights! 
+This mod has numerous features to add a little excitement to your flights! This mod may result in instability of your VTOL VR game. Failures may result in the inability to accomplish game missions.
+
+It is currently a work in progress. Failures and their recovery scenarios are currently a work in progress.
 
 ## Failure Modes
 ### Environment
