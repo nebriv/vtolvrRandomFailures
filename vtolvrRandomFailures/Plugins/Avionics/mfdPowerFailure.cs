@@ -21,8 +21,8 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Random MFD Power Toggler";
             failureDescription = "Test";
             failureCategory = "Avionics";
-            failureRate = 0.001;
-            failureEnabled = false;
+            hourlyFailureRate = 1;
+            failureEnabled = true;
         }
 
         public override void Run()

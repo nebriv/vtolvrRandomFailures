@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Random = System.Random;
 using Valve.Newtonsoft.Json;
+using System.IO;
 
 namespace vtolvrRandomFailures
 {
@@ -29,7 +30,11 @@ namespace vtolvrRandomFailures
 
         public Settings settings;
         private float failureRateMultiplier = 1;
+        private float failureRateHullDamageMultiplier = 6;
         public UnityAction<float> multiplierChanged;
+        public Actor playerActor;
+
+        public bool failuresSetup;
 
         private bool runFailures;
 
@@ -52,24 +57,24 @@ namespace vtolvrRandomFailures
 
             List<String> failureCategories = new List<string>(failures.Keys);
 
-            //settings = new Settings(this);
+            settings = new Settings(this);
 
-            //settings.CreateCustomLabel("Failure rate multiplier changes how often failures happen.");
-            //settings.CreateCustomLabel("Default = 1");
-            //settings.CreateFloatSetting("Failure multiplier:", multiplierChanged, failureRateMultiplier);
+            settings.CreateCustomLabel("Failure rate multiplier changes how often failures happen.");
+            settings.CreateCustomLabel("Default = 1");
+            settings.CreateFloatSetting("Failure multiplier:", multiplierChanged, failureRateMultiplier);
 
-            //settings.CreateCustomLabel("Failure Categories (Currently Read Only)");
+            settings.CreateCustomLabel("Failure Categories (Currently Read Only)");
 
-            //Dictionary<String, Boolean> failureCategoriesEnabled = new Dictionary<string, bool>();
+            Dictionary<String, Boolean> failureCategoriesEnabled = new Dictionary<string, bool>();
 
-            //foreach (String category in failureCategories)
-            //{
-            //    failureCategoriesEnabled.Add(category, true);
-            //    settings.CreateBoolSetting(category, failureCategoryChange, true);
-            //}
+            foreach (String category in failureCategories)
+            {
+                failureCategoriesEnabled.Add(category, true);
+                settings.CreateBoolSetting(category, failureCategoryChange, true);
+            }
 
 
-            //VTOLAPI.CreateSettingsMenu(settings);
+            VTOLAPI.CreateSettingsMenu(settings);
 
             Debug.Log($"{Globals.projectName} - {Globals.projectVersion} by {Globals.projectAuthor} loaded!");
         }
@@ -92,39 +97,71 @@ namespace vtolvrRandomFailures
 
             yield return new WaitForSeconds(2);
 
+            // Run the setup method on each failure to build out various components
+            if (!failuresSetup)
+            {
+                StartCoroutine(setupFailures());
+                failuresSetup = true;
+            }
+            
+
+            
+            playerActor = FlightSceneManager.instance.playerActor;
+
+        }
+
+        IEnumerator setupFailures()
+        {
+            foreach (KeyValuePair<string, List<BaseFailure>> entry in failures)
+            {
+                foreach (BaseFailure failure in entry.Value)
+                {
+                    failure.Setup();
+                    yield return new WaitForFixedUpdate();
+                }
+            }
             runFailures = true;
             StartCoroutine(RunEverySecond(1));
         }
 
         IEnumerator RunEverySecond(float seconds)
         {
-            while (true)
+            while (runFailures)
             {
                 yield return new WaitForSeconds(seconds);
-                //Log("Running failure check");
-                if (runFailures)
+                if (SceneManager.GetActiveScene().buildIndex != 7 && SceneManager.GetActiveScene().buildIndex != 12)
                 {
-                    if (SceneManager.GetActiveScene().buildIndex != 7 && SceneManager.GetActiveScene().buildIndex != 12)
-                    {
-                        runFailures = false;
-                        Start();
-                    }
+                    runFailures = false;
+                    Start();
+                }
 
-                    foreach (KeyValuePair<string, List<BaseFailure>> entry in failures)
+                foreach (KeyValuePair<string, List<BaseFailure>> entry in failures)
+                {
+                    foreach (BaseFailure failure in entry.Value)
                     {
-                        foreach (BaseFailure failure in entry.Value)
+                        yield return new WaitForFixedUpdate();
+                        Random rand = new Random();
+                        double chance = rand.NextDouble();
+
+                        // TODO: It sort of seems like the chance isn't being regenerated for each failure. Fix?
+
+                        Health health = Traverse.Create(playerActor).Field("h").GetValue() as Health;
+                        float lostHealth = 100 - health.currentHealth;
+
+                        float failureRateHullDamageMultiplierResult = (lostHealth / 100) * failureRateHullDamageMultiplier;
+
+                        if (failureRateHullDamageMultiplierResult == 0)
                         {
-                            Random rand = new Random();
-                            double chance = rand.NextDouble();
+                            failureRateHullDamageMultiplierResult = 1;
+                        }
 
-                            double chanceMultiplied = chance * failureRateMultiplier;
-                            //Log($"{chance} * {failureRateMultiplier} = {chanceMultiplied}");
+                        double chanceMultiplied = chance * failureRateMultiplier * failureRateHullDamageMultiplierResult;
+                        //Log($"{chance} * {failureRateMultiplier} * {failureRateHullDamageMultiplierResult} = {chanceMultiplied}");
 
-                            if (chanceMultiplied <= failure.failureRate)
-                            {
-                                //Log($"{chanceMultiplied} <= {failure.failureRate}");
-                                failure.runFailure(failures);
-                            }
+                        if (chanceMultiplied <= failure.failureRate)
+                        {
+                            //Log($"{chanceMultiplied} <= {failure.failureRate}");
+                            failure.runFailure(failures);
                         }
                     }
                 }
@@ -132,25 +169,22 @@ namespace vtolvrRandomFailures
 
         }
 
-        public void FixedUpdate()
-        {
-
-            if (iterator < 26)
-            {
-                iterator++;
-            }
-            else
-            {
-                iterator = 0;
-
-
-
-            }
-        }
 
         private Dictionary<string, List<BaseFailure>> GetFailures()
         {
-            
+            // Getting standard asset bundle which contains some warning sounds and etc
+            try
+            {
+                string assetPath = Path.Combine(Application.dataPath, "Managed", "basefailure.dll");
+                AssetBundle baseFailureAssetBundle = AssetBundle.LoadFromFile(assetPath);
+                AudioClip genericWarning = baseFailureAssetBundle.LoadAsset<AudioClip>("ttsw_warning");
+            } catch (Exception err)
+            {
+                LogError("Caught exception while loading basefailure.dll");
+                LogError(err.ToString());
+            }
+
+
             // The parent object we want to get the objects from
             Type parentType = typeof(BaseFailure);
 
@@ -171,7 +205,8 @@ namespace vtolvrRandomFailures
 
                 Log($"Creating BaseFailure");
                 BaseFailure failure = newFailure.GetComponent<BaseFailure>();
-                failure.Setup();
+                failure.genericWarning = genericWarning;
+                failure.baseFailureAssetBundle = baseFailureAssetBundle;
 
                 DontDestroyOnLoad(newFailure);
                 Log($"Done loading.");

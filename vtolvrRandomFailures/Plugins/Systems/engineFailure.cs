@@ -22,8 +22,8 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Engine Failure";
             failureDescription = "Test";
             failureCategory = "Systems";
-
-            hourlyFailureRate = 2;
+            maxRunCount = 2;
+            hourlyFailureRate = 1;
             failureEnabled = true;
 
         }

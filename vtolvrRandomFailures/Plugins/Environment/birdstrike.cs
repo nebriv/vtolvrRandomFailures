@@ -13,9 +13,119 @@ using Valve.Newtonsoft.Json;
 using NAudio;
 using Unity;
 using System.IO;
+using MFlight.Demo;
 
 namespace vtolvrRandomFailures.Plugins
 {
+
+    class birdStrike : BaseFailure
+    {
+
+        //This seems to be a semi-realistic number that visually looks alright
+        int birdCount = 200;
+        int curCount = 0;
+
+        // Min and Max Altitude to spawn birds at
+        float minAltitude = 100;
+        float maxAltitude = 1524;
+        //float maxAltitude = 10000;
+
+        public GameObject[] birdList;
+
+        public static AssetBundle birdAsset;
+        public static AudioClip notabirdsound;
+        public static AudioClip honking;
+        public static AudioClip birdBump;
+
+
+        public birdStrike()
+        {
+            // Setting up the failure variables
+            failureName = "Bird Strike";
+            failureDescription = "Test";
+
+            failureCategory = "Environment";
+
+            hourlyFailureRate = 4;
+            failureEnabled = true;
+            maxRunCount = 1;
+
+            string birdPath = Path.Combine(Application.dataPath, "Managed", "birdsound.dll");
+
+            birdAsset = AssetBundle.LoadFromFile(birdPath);
+
+            notabirdsound = birdAsset.LoadAsset<AudioClip>("smg1fire");
+
+            honking = birdAsset.LoadAsset<AudioClip>("honk-honk");
+            birdBump = birdAsset.LoadAsset<AudioClip>("doorbump");
+
+        }
+
+        public override void Run()
+        {
+            base.Run();
+            Actor playeractor = FlightSceneManager.instance.playerActor;
+            GameObject playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
+            Transform playerLocation = playeractor.transform;
+
+            //addContinuousWarning(birdWarning);
+
+            if (playeractor.flightInfo.radarAltitude >= minAltitude && playeractor.flightInfo.radarAltitude <= maxAltitude)
+            {
+                Debug.Log("Spawning Birds");
+
+                running = true;
+
+                // Add the audio emitter
+                AudioSource honker = gameObject.AddComponent<AudioSource>();
+
+                // Set the bird clip audio (loaded in birdStrike)
+                honker.clip = birdStrike.honking;
+
+                // Set the volume UNKNOWN scale...
+                honker.volume = .5f;
+                honker.Play();
+
+                Debug.Log(otherFailures);
+
+                while (curCount < birdCount)
+                {
+                    //Spawn in bird spheres
+                    GameObject bird = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    bird.AddComponent<Bird>();
+                    //Add the above bird class to them
+
+                    bird.GetComponent<Bird>().otherFailures = this.otherFailures;
+
+
+                    //Keep track of the birds so they don't fly away
+                    birdList.Add(bird);
+                    curCount++;
+                }
+
+                //Start our coroutine to delete the birds eventually
+                StartCoroutine(DeleteBirds());
+                running = false;
+            }
+
+        }
+
+
+
+        private IEnumerator DeleteBirds()
+        {
+
+            yield return new WaitForSeconds(60);
+
+            foreach (GameObject bird in birdList)
+            {
+                // I think null birds might be dead?
+                if (bird != null) {
+                    GameObject.Destroy(bird);
+                }
+            }
+        }
+    }
 
     class Bird : MonoBehaviour
     {
@@ -44,7 +154,7 @@ namespace vtolvrRandomFailures.Plugins
         private float maxZ = 10;
 
         // Min/Max distance that bird filled cube spawns
-        private float minDistanceFromPlayer = 800;
+        private float minDistanceFromPlayer = 900;
         private float maxDistanceFromPlayer = 2000;
 
         // Damage/Failure Rates
@@ -67,7 +177,7 @@ namespace vtolvrRandomFailures.Plugins
             playeractor = FlightSceneManager.instance.playerActor;
             playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
             playerLocation = playeractor.transform;
-          
+
 
             birdActor = gameObject.AddComponent<Actor>();
             birdActor.name = "Bird";
@@ -93,7 +203,7 @@ namespace vtolvrRandomFailures.Plugins
 
             // -300x300 seems to be a decent size to place the birds. This will randomly place them within this box below (length 600, width 600, depth 10)
             Vector3 position2 = new Vector3(postion1.x + Random.Range(minX, maxX), postion1.y + Random.Range(minY, maxY), postion1.z + Random.Range(minZ, maxZ));
-            
+
             // Put the bird there.
             gameObject.transform.position = position2;
 
@@ -103,18 +213,6 @@ namespace vtolvrRandomFailures.Plugins
             // Wakey wakey.
             gameObject.SetActive(true);
 
-
-            // from the modloader
-            //string path = ModLoaderManager.instance.rootPath + @"\skins";
-            //foreach (string folder in Directory.GetDirectories(path))
-
-
-            //AudioClip bang = Resources.Load("Assets/AudioClip/smg1fire.wav") as AudioClip;
-
-
-            //var myLoadedAssetBundle = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, "myassetBundle"));
-
-            //F:/SteamLibrary/steamapps/common/VTOL VR/VTOLVR_Data/StreamingAssets\myassetBundle
 
             // Add the audio emitter
             squawk = gameObject.AddComponent<AudioSource>();
@@ -175,7 +273,7 @@ namespace vtolvrRandomFailures.Plugins
                 System.Random rand = new System.Random();
                 double chance = rand.NextDouble();
 
-                if (fail.failureName == "Engine Failure" && chance <= engineFailureRate)
+                if (fail.failureName.Contains("Engine Failure") && chance <= engineFailureRate)
                 {
                     fail.runFailure();
                 }
@@ -206,100 +304,4 @@ namespace vtolvrRandomFailures.Plugins
         }
     }
 
-    class birdStrike : BaseFailure
-    {
-
-        //This seems to be a semi-realistic number that visually looks alright
-        int birdCount = 200;
-        int curCount = 0;
-
-        public GameObject[] birdList;
-
-        public static AssetBundle birdAsset;
-        public static AudioClip notabirdsound;
-        public static AudioClip honking;
-        public static AudioClip birdBump;
-
-
-        public birdStrike()
-        {
-            // Setting up the failure variables
-            failureName = "Bird Strike";
-            failureDescription = "Test";
-
-            failureCategory = "Environment";
-
-            hourlyFailureRate = 360;
-            failureEnabled = true;
-            maxRunCount = 1;
-
-            string birdPath = Path.Combine(Application.dataPath, "Managed", "birdsound.dll");
-
-            birdAsset = AssetBundle.LoadFromFile(birdPath);
-
-            notabirdsound = birdAsset.LoadAsset<AudioClip>("smg1fire");
-
-            honking = birdAsset.LoadAsset<AudioClip>("honk-honk");
-            birdBump = birdAsset.LoadAsset<AudioClip>("doorbump");
-        }
-
-        public override void Run()
-        {
-            base.Run();
-            Debug.Log("Spawning Birds");
-
-            running = true;
-
-            Actor playeractor = FlightSceneManager.instance.playerActor;
-            GameObject playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
-            Transform playerLocation = playeractor.transform;
-
-
-
-            // Add the audio emitter
-            AudioSource honker = gameObject.AddComponent<AudioSource>();
-
-            // Set the bird clip audio (loaded in birdStrike)
-            honker.clip = birdStrike.honking;
-
-            // Set the volume UNKNOWN scale...
-            honker.volume = .5f;
-            honker.Play();
-
-            Debug.Log(otherFailures);
-
-            while (curCount < birdCount)
-            {
-                //Spawn in bird spheres
-                GameObject bird = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                bird.AddComponent<Bird>();
-                //Add the above bird class to them
-
-                bird.GetComponent<Bird>().otherFailures = this.otherFailures;
-
-
-                //Keep track of the birds so they don't fly away
-                birdList.Add(bird);
-                curCount++;
-            }
-
-            //Start our coroutine to delete the birds eventually
-            StartCoroutine(DeleteBirds());
-
-        }
-
-        private IEnumerator DeleteBirds()
-        {
-
-            yield return new WaitForSeconds(60);
-
-            foreach (GameObject bird in birdList)
-            {
-                // I think null birds might be dead?
-                if (bird != null) {
-                    GameObject.Destroy(bird);
-                }
-            }
-        }
-    }
 }

@@ -26,13 +26,27 @@ namespace vtolvrRandomFailures.Plugins
             failureDescription = "Gear Stuck Down.";
             failureCategory = "Systems";
             hourlyFailureRate = 1;
-            maxRunCount = 5;
-            failureEnabled = false;
-            running = false;
-
+            maxRunCount = 3;
+            failureEnabled = true;
         }
         public override void Run()
         {
+
+            Debug.Log("Creating Gear Stuck Up FlightWarning");
+            FlightWarnings.FlightWarning gearStuckWarning = AddWarning("GEAR STUCK DOWN", genericWarning);
+
+            Debug.Log("Adding Gear Stuck Up to HUDWarning");
+            HUDWarning.flightWarning = gearStuckWarning;
+
+
+            Debug.Log("Adding warntext to HUDWarning");
+
+
+            HUDWarning.setWarnText($"-[ GEAR FAILURE ]-");
+            HUDWarning.runWarning = true;
+
+            running = true;
+
             running = true;
 
             GameObject currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
@@ -87,7 +101,7 @@ namespace vtolvrRandomFailures.Plugins
             {
                 System.Random rand = new System.Random();
                 int randInt = rand.Next(1, 100);
-                if (randInt < 80)
+                if (randInt < 50)
                 {
                     Debug.Log("Unfailing Gear Stuck Down");
                     gear.statusLight.SetColor(Color.black);

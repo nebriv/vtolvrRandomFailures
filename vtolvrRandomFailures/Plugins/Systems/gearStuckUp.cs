@@ -18,6 +18,7 @@ namespace vtolvrRandomFailures.Plugins
 
         public GearAnimator gear;
         public VRInteractable gearInteractable;
+        public GameObject currentVehicle;
 
         public gearStuckUp()
         {
@@ -26,16 +27,28 @@ namespace vtolvrRandomFailures.Plugins
             failureDescription = "Gear Stuck Up.";
             failureCategory = "Systems";
             hourlyFailureRate = 1;
-            maxRunCount = 5;
-            failureEnabled = false;
-            running = false;
-
+            maxRunCount = 3;
+            failureEnabled = true;
         }
         public override void Run()
         {
+
+            Debug.Log("Creating Gear Stuck Up FlightWarning");
+            FlightWarnings.FlightWarning gearStuckWarning = AddWarning("GEAR STUCK UP", genericWarning);
+
+            Debug.Log("Adding Gear Stuck Up to HUDWarning");
+            HUDWarning.flightWarning = gearStuckWarning;
+
+
+            Debug.Log("Adding warntext to HUDWarning");
+
+
+            HUDWarning.setWarnText($"-[ GEAR FAILURE ]-");
+            HUDWarning.runWarning = true;
+
             running = true;
 
-            GameObject currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
+            currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
             gear = currentVehicle.GetComponentInChildren<GearAnimator>();
 
             gear.RetractImmediate();
@@ -58,7 +71,7 @@ namespace vtolvrRandomFailures.Plugins
 
         private IEnumerator FlashLightsRed()
         {
-
+            APURunning();
             if (gear != null && gear.statusLight != null)
             {
                 gear.statusLight.toggleColor = Color.red;
@@ -76,16 +89,38 @@ namespace vtolvrRandomFailures.Plugins
             }
         }
 
+
+        public bool APURunning()
+        {
+            AuxilliaryPowerUnit apu = currentVehicle.GetComponentInChildren<AuxilliaryPowerUnit>();
+
+            if (apu != null)
+            {
+
+                if (apu.rpm > 0)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                Debug.Log("APU IS NULL");
+                return true;
+            }
+            return false;
+        }
+
         public override void stopFailure()
         {
             if (running)
             {
                 System.Random rand = new System.Random();
                 int randInt = rand.Next(1, 100);
-                if (randInt < 80)
+                if (randInt < 50 || APURunning())
                 {
                     Debug.Log("Unfailing Gear Stuck Up");
                     gear.statusLight.SetColor(Color.black);
+                    HUDWarning.runWarning = false;
                     running = false;
                     gearInteractable.OnInteract.RemoveListener(stopFailure);
                 }

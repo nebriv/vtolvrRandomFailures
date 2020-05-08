@@ -22,7 +22,7 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Systems";
             hourlyFailureRate = 1;
             maxRunCount = 1;
-            failureEnabled = false;
+            failureEnabled = true;
 
         }
         public override void Run()

@@ -22,7 +22,7 @@ namespace vtolvrRandomFailures.Plugins
             failureDescription = "Test";
             failureCategory = "Avionics";
             hourlyFailureRate = 1;
-            failureEnabled = false;
+            failureEnabled = true;
         }
 
         public override void Run()
