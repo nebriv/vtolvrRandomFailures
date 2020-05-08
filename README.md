@@ -28,7 +28,7 @@ Bird Strikes, MFD Power, HSI (Compass), Alternators, Engine Failure, Engine Fire
 	 -  **Criteria**
 		 - Must be in a plane that has an electable canopy. (Only tested on F/A-26)
 	 - **Default Failure Rate**
-		 - 1x Hour
+		 - .5x Hour
 	 - **Description**
 		 - Triggers the ejection sequence associated with the planes canopy.
 	 - **Recovery**
@@ -48,9 +48,9 @@ Bird Strikes, MFD Power, HSI (Compass), Alternators, Engine Failure, Engine Fire
 		 -  **Criteria**
 			 - None
 		 - **Default Failure Rate**
-			 - 1x Hour
+			 - 2x Hour
 		 - **Description**
-			 - Simulates an engine fire in one or more engines. Failure to recovery from the fire results in permanent failure of the engine.
+			 - Simulates an engine fire in one or more engines. Failure to recover from the fire results in permanent failure of the engine.
 		 - **Recovery**
 			 - Shut down the affected engine.
 	- Alternator(s)
