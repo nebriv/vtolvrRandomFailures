@@ -6,6 +6,9 @@ It is currently a work in progress. Failures and their recovery scenarios are cu
 
 Some failures may generate warning messages, some may not. Pay attention to your instruments!
 
+Abbreviated list of failures:
+Bird Strikes, MFD Power, HSI (Compass), Alternators, Engine Failure, Engine Fire, Fuel Leak, Gear stuck (up and down)
+
 ## Failure Modes
 ### Environment
 
