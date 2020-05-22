@@ -22,7 +22,7 @@ namespace vtolvrRandomFailures.Plugins
             failureDescription = "Test";
             failureCategory = "Avionics";
             hourlyFailureRate = 1;
-            failureEnabled = true;
+            failureEnabled = false;
         }
 
         public override void Run()
@@ -31,7 +31,6 @@ namespace vtolvrRandomFailures.Plugins
             GameObject currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
             DashHSI hsi = currentVehicle.GetComponentInChildren<DashHSI>();
 
-            Debug.Log(hsi.name);
             running = true;
 
             StartCoroutine(spinGuage(hsi));
@@ -54,7 +53,7 @@ namespace vtolvrRandomFailures.Plugins
             }
             if (hsi != null)
             {
-                Debug.Log($"Setting Heading to {fakeHeading}");
+                //Debug.Log($"Setting Heading to {fakeHeading}");
 
                 Destroy(hsi.flightInfo);
 
@@ -62,7 +61,7 @@ namespace vtolvrRandomFailures.Plugins
             }
             else
             {
-                Debug.Log("It seems that the HSI is null");
+                //Debug.Log("It seems that the HSI is null");
             }
             yield return new WaitForSeconds(.0000001f);
             if (running)

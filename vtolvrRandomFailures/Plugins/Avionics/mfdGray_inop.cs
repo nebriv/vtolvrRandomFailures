@@ -15,7 +15,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Gray Out MFD";
             failureDescription = "Test";
             failureCategory = "Avionics";
-            failureRate = 0.9;
+            hourlyFailureRate = 2;
             failureEnabled = false;
 
         }

@@ -21,8 +21,8 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Random MFD Power Toggler";
             failureDescription = "Test";
             failureCategory = "Avionics";
-            hourlyFailureRate = 1;
-            failureEnabled = true;
+            hourlyFailureRate = 1000;
+            failureEnabled = false;
         }
 
         public override void Run()
@@ -32,8 +32,10 @@ namespace vtolvrRandomFailures.Plugins
             manager = currentVehicle.GetComponentInChildren<MFDManager>();
             List<MFD> mfds = manager.mfds;
             System.Random rand = new System.Random();
+            Debug.Log($"Found {mfds.Count.ToString()} MFDs");
             int index = rand.Next(mfds.Count);
             mfds[index].TogglePower();
+            StartWarning();
         }
     }
 }

@@ -33,11 +33,11 @@ namespace vtolvrRandomFailures.Plugins
 
             hourlyFailureRate = 1;
             fuelLeakRate = 1;
-            failureEnabled = true;
+            failureEnabled = false;
             maxRunCount = 2;
 
             fuelLeakRunTimeMin = 30;
-            fuelLeakRunTimeMax = 1800;
+            fuelLeakRunTimeMax = 300;
 
         }
 
@@ -58,6 +58,11 @@ namespace vtolvrRandomFailures.Plugins
             StartCoroutine(unfailFuelLeak());
         }
 
+        public override void SetupSpecific()
+        {
+            //Debug.Log("Creating Engine Fire FlightWarning");
+            SetHUDWarningText($"-[ FUEL LEAK ]-");
+        }
 
         private IEnumerator leakFuel()
         {
@@ -68,10 +73,7 @@ namespace vtolvrRandomFailures.Plugins
                 {
 
                     fuelLeakRate = playerActor.flightInfo.playerGs;
-                    if (fuelLeakRate > 2)
-                    {
-                        fuelLeakRate = 2;
-                    } else if (fuelLeakRate > 0)
+                    if (fuelLeakRate > 0)
                     {
                         fuelDump.particleSystems.SetEmission(true);
                     } 
@@ -80,8 +82,6 @@ namespace vtolvrRandomFailures.Plugins
                         fuelLeakRate = 0;
                         fuelDump.particleSystems.SetEmission(false);
                     }
-                    Debug.Log(fuelLeakRate);
-                    Debug.Log(fuelDump.fuelTank.fuel);
                     yield return wait;
                 }
 

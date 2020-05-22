@@ -47,10 +47,10 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Environment";
 
             hourlyFailureRate = 4;
-            failureEnabled = true;
+            failureEnabled = false;
             maxRunCount = 1;
 
-            string birdPath = Path.Combine(Application.dataPath, "Managed", "birdsound.dll");
+            string birdPath = Path.Combine(Application.dataPath, "Managed", "birdstrike.dll");
 
             birdAsset = AssetBundle.LoadFromFile(birdPath);
 

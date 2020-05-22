@@ -38,6 +38,9 @@ namespace vtolvrRandomFailures
 
         private bool runFailures;
 
+        private AssetBundle baseFailureAssetBundle;
+        private AudioClip genericWarning;
+
         public void failureRateMultiplierChanged(float amount)
         {
             failureRateMultiplier = amount;
@@ -87,6 +90,8 @@ namespace vtolvrRandomFailures
 
         }
 
+
+
         IEnumerator WaitForMap()
         {
             while (SceneManager.GetActiveScene().buildIndex != 7 || SceneManager.GetActiveScene().buildIndex == 12)
@@ -95,7 +100,10 @@ namespace vtolvrRandomFailures
                 yield return null;
             }
 
-            yield return new WaitForSeconds(2);
+            StartCoroutine(WaitForScenario());
+
+            yield return new WaitForSeconds(1);
+            playerActor = FlightSceneManager.instance.playerActor;
 
             // Run the setup method on each failure to build out various components
             if (!failuresSetup)
@@ -104,20 +112,55 @@ namespace vtolvrRandomFailures
                 failuresSetup = true;
             }
             
-
             
-            playerActor = FlightSceneManager.instance.playerActor;
 
+        }
+
+        private IEnumerator WaitForScenario()
+        {
+            while (VTMapManager.fetch == null || !VTMapManager.fetch.scenarioReady)
+            {
+                yield return null;
+            }
+            Debug.Log("Scenario Loaded");
         }
 
         IEnumerator setupFailures()
         {
+            GameObject playersVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
+            Battery curBattery = playersVehicle.GetComponentInChildren<Battery>();
+            Debug.Log("Waiting for battery to be connected");
+            while (!curBattery.connected)
+            {
+                //Pausing this method till the battery is connected
+                yield return null;
+            }
+            Debug.Log("Battery Connected");
+            yield return new WaitForSeconds(1);
+
             foreach (KeyValuePair<string, List<BaseFailure>> entry in failures)
             {
                 foreach (BaseFailure failure in entry.Value)
                 {
-                    failure.Setup();
-                    yield return new WaitForFixedUpdate();
+                    try
+                    {
+                        if (failure.failureEnabled)
+                        {
+                            Debug.Log($"Running Setup for {failure.failureName}");
+                            failure.Setup();
+                        }
+
+                    } catch (Exception err)
+                    {
+                        LogError($"Exception caught while running setup for {failure.failureName}");
+                        LogError(err.ToString());
+                    }
+                    if (failure.failureEnabled)
+                    {
+                        failure.OneShotWarning();
+                        yield return new WaitForSeconds(2);
+                    }
+
                 }
             }
             runFailures = true;
@@ -132,6 +175,7 @@ namespace vtolvrRandomFailures
                 if (SceneManager.GetActiveScene().buildIndex != 7 && SceneManager.GetActiveScene().buildIndex != 12)
                 {
                     runFailures = false;
+                    failuresSetup = false;
                     Start();
                 }
 
@@ -143,7 +187,11 @@ namespace vtolvrRandomFailures
                         Random rand = new Random();
                         double chance = rand.NextDouble();
 
-                        // TODO: It sort of seems like the chance isn't being regenerated for each failure. Fix?
+                        // TODO: Add currently running failures to list.
+                        // TODO: Add list of recent run failures.
+                        // TODO: Restarting the game doesn't work.
+
+
 
                         Health health = Traverse.Create(playerActor).Field("h").GetValue() as Health;
                         float lostHealth = 100 - health.currentHealth;
@@ -155,12 +203,12 @@ namespace vtolvrRandomFailures
                             failureRateHullDamageMultiplierResult = 1;
                         }
 
-                        double chanceMultiplied = chance * failureRateMultiplier * failureRateHullDamageMultiplierResult;
-                        //Log($"{chance} * {failureRateMultiplier} * {failureRateHullDamageMultiplierResult} = {chanceMultiplied}");
+                        double failureRateMultiplied = failure.failureRate * failureRateMultiplier * failureRateHullDamageMultiplierResult;
+                        //Log($"{failure.failureRate} * {failureRateMultiplier} * {failureRateHullDamageMultiplierResult} = Calculated Failure Rate: {failureRateMultiplied} vs Chance:{chance}");
 
-                        if (chanceMultiplied <= failure.failureRate)
+                        if (chance <= failureRateMultiplied)
                         {
-                            //Log($"{chanceMultiplied} <= {failure.failureRate}");
+                            Log($"{chance} <= {failureRateMultiplied} (Base Rate: {failure.failureRate})");
                             failure.runFailure(failures);
                         }
                     }
@@ -173,16 +221,11 @@ namespace vtolvrRandomFailures
         private Dictionary<string, List<BaseFailure>> GetFailures()
         {
             // Getting standard asset bundle which contains some warning sounds and etc
-            try
-            {
-                string assetPath = Path.Combine(Application.dataPath, "Managed", "basefailure.dll");
-                AssetBundle baseFailureAssetBundle = AssetBundle.LoadFromFile(assetPath);
-                AudioClip genericWarning = baseFailureAssetBundle.LoadAsset<AudioClip>("ttsw_warning");
-            } catch (Exception err)
-            {
-                LogError("Caught exception while loading basefailure.dll");
-                LogError(err.ToString());
-            }
+
+            string assetPath = Path.Combine(Application.dataPath, "Managed", "basefailure.dll");
+            AssetBundle baseFailureAssetBundle = AssetBundle.LoadFromFile(assetPath);
+            AudioClip genericWarning = baseFailureAssetBundle.LoadAsset<AudioClip>("ttsw_warning");
+
 
 
             // The parent object we want to get the objects from
@@ -205,18 +248,11 @@ namespace vtolvrRandomFailures
 
                 Log($"Creating BaseFailure");
                 BaseFailure failure = newFailure.GetComponent<BaseFailure>();
-                failure.genericWarning = genericWarning;
+                failure.warningAudio = genericWarning;
                 failure.baseFailureAssetBundle = baseFailureAssetBundle;
 
-                DontDestroyOnLoad(newFailure);
+                DontDestroyOnLoad(failure);
                 Log($"Done loading.");
-
-                //VTOLMOD mod = newModGo.GetComponent<VTOLMOD>();
-
-
-                //BaseFailure failure = (BaseFailure)Activator.CreateInstance(type);
-
-                //Log(failure.ToString());
 
                 if (failures.ContainsKey(failure.failureCategory))
                 {

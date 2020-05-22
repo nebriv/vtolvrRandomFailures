@@ -18,7 +18,7 @@ namespace vtolvrRandomFailures.Plugins
     class engineFire : BaseFailure
     {
 
-        int fireDestroyTime = 30;
+        int fireDestroyTime = 45;
         int fireCounter = 0;
 
         public static AssetBundle engineFireAsset;
@@ -32,8 +32,7 @@ namespace vtolvrRandomFailures.Plugins
             failureName = "Engine Fire";
             failureDescription = "Test";
             failureCategory = "Systems";
-
-            hourlyFailureRate = 1;
+            hourlyFailureRate = 1000;
             failureEnabled = true;
 
             string assetPath = Path.Combine(Application.dataPath, "Managed", "enginefire.dll");
@@ -45,6 +44,24 @@ namespace vtolvrRandomFailures.Plugins
             Debug.Log("Loading Fire Particle System");
             fireAndSmoke = engineFireAsset.LoadAsset<GameObject>("Fire");
 
+        }
+        public override void SetupSpecific()
+        {
+
+            Debug.Log($"TestVAR: {testVar}");
+            testVar = "SetupSpecific";
+            Debug.Log($"TestVAR: {testVar}");
+            Debug.Log("In specific Setup");
+            //Debug.Log("Creating Engine Fire FlightWarning");
+            Debug.Log("()()()()()");
+            Debug.Log(HUDWarning.warnText.color);
+            Debug.Log(HUDWarning.warnText.transform.position);
+            Debug.Log(HUDWarning.warnText.text);
+            AddWarning("Engine Fire", engineFireAlarm);
+            SetHUDWarningText("-[ ENGINE FIRE ]-");
+            Debug.Log(HUDWarning.warnText.text);
+            Debug.Log(HUDWarning.warnText.color);
+            Debug.Log("Done with specific Setup");
         }
 
         // Was hoping to double up on effects in the engine, didn't work
@@ -61,27 +78,39 @@ namespace vtolvrRandomFailures.Plugins
             
         }
 
+
+
         private IEnumerator fireBurnOut(ModuleEngine engine)
         {
             yield return new WaitForSeconds(fireDestroyTime);
 
             if (engine.engineEnabled)
             {
-                HUDWarning.runWarning = false;
-                HUDWarning.warnCleared = true;
+                StopWarning();
+            
                 engine.engineEffects.particleEffects[1].afterburnerOnly = true;
                 engine.FailEngine();
             }
             else
             {
                 engine.engineEffects.particleEffects[1].afterburnerOnly = true;
-                HUDWarning.runWarning = false;
+                StopWarning();
             }
 
         }
 
         public override void Run()
         {
+
+            Debug.Log($"TestVAR: {testVar}");
+            testVar = "Run";
+            Debug.Log($"TestVAR: {testVar}");
+
+
+            Debug.Log("*******");
+            Debug.Log(HUDWarning.warnText.color);
+            Debug.Log(HUDWarning.warnText.text);
+
             base.Run();
             running = true;
 
@@ -94,11 +123,7 @@ namespace vtolvrRandomFailures.Plugins
             Debug.Log($"Total Engines: {engines.ToList().Count()}");
             ModuleEngine engine = engines[index];
 
-            //Debug.Log("Creating Engine Fire FlightWarning");
-            FlightWarnings.FlightWarning engineFireWarning = AddWarning("Engine Fire", engineFireAlarm);
 
-            //Debug.Log("Adding Engine Fire to HUDWarning");
-            HUDWarning.flightWarning = engineFireWarning;
 
             UIImageToggle[] lights = currentVehicle.GetComponentsInChildren<UIImageToggle>();
             string leftOrRight;
@@ -114,19 +139,13 @@ namespace vtolvrRandomFailures.Plugins
                 leftOrRightCAPS = "RIGHT";
             }
 
-
             // Adding warning text to the HUD Warning
             if (engines.ToList().Count() > 0)
             {
-                HUDWarning.setWarnText($"-[ {leftOrRightCAPS} ENGINE FIRE ]-");
-            }
-            else
-            {
-                HUDWarning.setWarnText($"-[ ENGINE FIRE ]-");
+                SetHUDWarningText($"-[ {leftOrRightCAPS} ENGINE FIRE ]-");
             }
 
-
-            HUDWarning.runWarning = true;
+            StartWarning();
 
 
             // THIS DOESN'T SET THE LIGHT TO ON. WHAT GIVES?
@@ -144,18 +163,6 @@ namespace vtolvrRandomFailures.Plugins
             engine.engineEffects.particleEffects[1].afterburnerOnly = false;
 
 
-            // None of this works (yet?)
-            //GameObject newFX = Instantiate(fireAndSmoke, engine.engineEffects.particleEffects[2].particleSystem.transform, true);
-
-            //newFX.AddComponent<FloatingOriginTransform>();
-
-            //Destroy(engine.engineEffects.particleEffects[1].particleSystem.gameObject.GetComponent<ParticleSystem>());
-
-            //engine.engineEffects.particleEffects[1].particleSystem.gameObject.AddComponent<ParticleSystem>();
-
-            //ParticleSystem ps = newFX.GetComponent<ParticleSystem>();
-
-            //ps.gameObject.AddComponent<ParticleSystem>();
 
             StartCoroutine(fireBurnOut(engine));
 

@@ -29,7 +29,7 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Systems";
             maxRunCount = 1;
             hourlyFailureRate = 3;
-            failureEnabled = true;
+            failureEnabled = false;
 
         }
 
@@ -49,12 +49,6 @@ namespace vtolvrRandomFailures.Plugins
 
             Debug.Log($"Total Engines: {engines.ToList().Count()}");
             //ModuleEngine engine = engines[index];
-
-            Debug.Log("Creating Alternator Failure FlightWarning");
-            FlightWarnings.FlightWarning alternatorFailureWarning = AddWarning("Alternator Failure", genericWarning);
-
-            Debug.Log("Adding Alternator Failure to HUDWarning");
-            HUDWarning.flightWarning = alternatorFailureWarning;
 
             UIImageToggle[] lights = currentVehicle.GetComponentsInChildren<UIImageToggle>();
             string leftOrRight;
@@ -79,9 +73,9 @@ namespace vtolvrRandomFailures.Plugins
 
 
             Debug.Log("Adding warntext to HUDWarning");
-            
-            HUDWarning.setWarnText($"-[ ALTERNATOR FAILURE ]-");
-            HUDWarning.runWarning = true;
+
+            SetHUDWarningText($"-[ ALTERNATOR FAILURE ]-");
+            StartWarning();
 
         }
 

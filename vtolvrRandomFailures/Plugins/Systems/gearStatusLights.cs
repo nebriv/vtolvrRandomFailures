@@ -27,29 +27,18 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Systems";
             hourlyFailureRate = 2;
             maxRunCount = 3;
-            failureEnabled = true;
+            failureEnabled = false;
 
         }
         public override void Run()
         {
 
             Debug.Log("Creating Gear Status Lights FlightWarning");
-            FlightWarnings.FlightWarning gearStatusLightsWarning = AddWarning("GEAR STATUS LIGHTS", genericWarning);
-
-            Debug.Log("Adding Gear Status Lights to HUDWarning");
-            HUDWarning.flightWarning = gearStatusLightsWarning;
-
-
-            Debug.Log("Adding warntext to HUDWarning");
-
-
-            HUDWarning.setWarnText($"-[ GEAR FAILURE ]-");
-            HUDWarning.runWarning = true;
-
+            SetHUDWarningText($"-[ GEAR FAILURE ]-");
             running = true;
 
-            running = true;
-
+            StartWarning();
+            
             GameObject currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
             gear = currentVehicle.GetComponentInChildren<GearAnimator>();
 

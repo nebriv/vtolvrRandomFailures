@@ -24,7 +24,7 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Systems";
             maxRunCount = 2;
             hourlyFailureRate = 1;
-            failureEnabled = true;
+            failureEnabled = false;
 
         }
 

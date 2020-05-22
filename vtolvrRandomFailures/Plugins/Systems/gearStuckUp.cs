@@ -28,24 +28,17 @@ namespace vtolvrRandomFailures.Plugins
             failureCategory = "Systems";
             hourlyFailureRate = 1;
             maxRunCount = 3;
-            failureEnabled = true;
+            failureEnabled = false;
         }
         public override void Run()
         {
 
             Debug.Log("Creating Gear Stuck Up FlightWarning");
-            FlightWarnings.FlightWarning gearStuckWarning = AddWarning("GEAR STUCK UP", genericWarning);
-
-            Debug.Log("Adding Gear Stuck Up to HUDWarning");
-            HUDWarning.flightWarning = gearStuckWarning;
-
+            AddWarning("GEAR STUCK UP", warningAudio);
 
             Debug.Log("Adding warntext to HUDWarning");
-
-
-            HUDWarning.setWarnText($"-[ GEAR FAILURE ]-");
-            HUDWarning.runWarning = true;
-
+            SetHUDWarningText($"-[ GEAR FAILURE ]-");
+            StartWarning();
             running = true;
 
             currentVehicle = VTOLAPI.instance.GetPlayersVehicleGameObject();
